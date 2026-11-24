@@ -1,0 +1,6 @@
+# Data hasil pentest (sensitif) dan file buatan otomatis
+transformer/output/
+
+# Python
+transformer/.venv/
+__pycache__/

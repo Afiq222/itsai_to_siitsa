@@ -1,0 +1,4 @@
+{
+  "_catatan": "Sengaja kosong: JSON ITS AI tidak berisi kategori OWASP Top 10, jadi owasptop10 dikirim kosong dan diisi validator di SIITSA. Jika tim nanti menyepakati pemetaan, isi di sini: findingClass (huruf kecil) -> kode A01..A10.",
+  "map": {}
+}
