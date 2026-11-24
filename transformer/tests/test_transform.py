@@ -56,9 +56,8 @@ class FindingTest(unittest.TestCase):
         t = transform_finding(finding(), id_dok_aplikasi=7)["temuan_itsa"]
         self.assertEqual(list(t.keys()), SIITSA_KEYS)
         self.assertEqual(t["id_dok_aplikasi"], 7)
-        self.assertEqual(t["perban4"], "")  # ITS AI tidak memberi Perban 4; dipilih validator
-        self.assertEqual(t["owasptop10"], "")  # ITS AI tidak memberi OWASP; diisi validator
-        self.assertEqual(t["id_kamus_kerentanan"], 1)
+        # Tidak ada di data ITS AI: key tetap ada, isinya kosong untuk diisi validator.
+        self.assertEqual((t["perban4"], t["owasptop10"], t["id_kamus_kerentanan"]), ("", "", None))
         self.assertEqual(t["cvss"], "9.3")
         self.assertEqual(t["severity"], "Critical")
         self.assertEqual(t["method"], "GET")
@@ -80,21 +79,14 @@ class FindingTest(unittest.TestCase):
     def test_candidate_keeps_ai_severity(self):
         r = transform_finding(finding(severity="info", cvssScore=6.9, findingClass="missing-rate-limit-untested"))
         self.assertEqual(r["temuan_itsa"]["severity"], "Info")
-        self.assertEqual(r["temuan_itsa"]["id_kamus_kerentanan"], 4)
-        self.assertEqual(r["temuan_itsa"]["perban4"], "")
         self.assertTrue(any("Temuan kandidat" in w for w in r["peringatan"]))
 
-    def test_unmapped_class_left_empty_without_guess(self):
-        r = transform_finding(finding(findingClass="oauth-misconfig-baru"))
-        t = r["temuan_itsa"]
-        self.assertEqual((t["perban4"], t["owasptop10"], t["id_kamus_kerentanan"]), ("", "", None))
-        self.assertFalse(any("ditebak" in w or "id_kamus" in w for w in r["peringatan"]))
-
-    def test_class_outside_kamus_is_null_without_warning(self):
-        r = transform_finding(finding(findingClass="broken-access-control"))
-        self.assertIsNone(r["temuan_itsa"]["id_kamus_kerentanan"])
-        self.assertEqual(r["temuan_itsa"]["perban4"], "")
-        self.assertFalse(any("id_kamus" in w for w in r["peringatan"]))
+    def test_categories_always_empty_without_warning(self):
+        for cls in ("sqli", "idor", "broken-access-control", "kelas-baru"):
+            r = transform_finding(finding(findingClass=cls))
+            t = r["temuan_itsa"]
+            self.assertEqual((t["perban4"], t["owasptop10"], t["id_kamus_kerentanan"]), ("", "", None))
+            self.assertFalse(any("perban" in w or "owasp" in w or "kamus" in w for w in r["peringatan"]))
 
     def test_parameter_already_in_url_not_repeated(self):
         aff = {"url": "https://t.example/.htaccess", "parameter": "/.htaccess", "method": "GET"}

@@ -29,10 +29,9 @@ Tes (dari folder `transformer`): `.venv\Scripts\python.exe -m unittest discover 
 transformer/
   siitsa_transformer/
     normalize.py   baca & seragamkan 2 format ITS AI, hitung skor CVSS dari vektor, ambil screenshot
-    mapping.py     label severity, Perban 4, OWASP, kamus kerentanan (dari config/)
+    mapping.py     label & urutan severity
     transform.py   rakit temuan_itsa + langkah_poc + peringatan, urut severity, ringkasan
     __main__.py    CLI
-  config/          tabel findingClass → perban4 / owasp / id_kamus_kerentanan
   tests/           tes unit
   requirements.txt
 ```
@@ -55,7 +54,7 @@ transformer/
   "temuan": [
     {
       "no": 1, "ref": "F-01", "findingClass": "sqli", "status_ai": "...",
-      "temuan_itsa": { "id_dok_aplikasi": 2, "id_kamus_kerentanan": 1, "subjudul": "...", "perban4": "",
+      "temuan_itsa": { "id_dok_aplikasi": 2, "id_kamus_kerentanan": null, "subjudul": "...", "perban4": "",
                        "owasptop10": "", "lokasi": "...", "deskripsi_khusus": "...", "dampak_khusus": "...",
                        "rekom_khusus": "...", "cvss": "9.3", "cvss_string": "CVSS:4.0/...", "severity": "Critical",
                        "method": "GET", "status": "Open" },
@@ -78,8 +77,7 @@ Gambar (format findings.json): screenshot berketerangan "step i/n" dipasang ke l
 | SIITSA | Dari ITS AI |
 |---|---|
 | `subjudul` | `title` |
-| `perban4`, `owasptop10` | kosong (`""`): tidak ada di ITS AI, dipilih validator (`transformer/config/perban4.json`, `transformer/config/owasp.json` bisa diisi nanti) |
-| `id_kamus_kerentanan` | `findingClass` → `transformer/config/kamus_kerentanan.json`; `null` jika tidak ada di kamus |
+| `perban4`, `owasptop10`, `id_kamus_kerentanan` | selalu kosong (`""`, `""`, `null`): tidak ada di data ITS AI, diisi validator di SIITSA |
 | `lokasi`, `method` | `affected.url` (+ parameter) dan `affected.method`, atau `location` "METHOD url (param x)" dipecah |
 | `deskripsi_khusus` | `description` (+ `Asumsi: ...` jika ada) |
 | `dampak_khusus` | `businessImpact` / `impact`, tanpa paragraf baku asumsi CVSS |
@@ -94,5 +92,5 @@ Aturan pecah `reproSteps`: setiap baris = satu langkah, nomor di awal baris dibu
 baris tanpa nomor (mis. perintah `curl` di bawah langkah 3) digabung ke langkah sebelumnya.
 
 Nilai yang diterima form SIITSA (acuan, dibaca 2026-11-23): `severity` Critical/High/Medium/Low/Info,
-`status` Open/Close, `perban4` 13 label `a. autentikasi` … `m. keamanan konfigurasi` (ada di `mapping.py`),
+`status` Open/Close, `perban4` 13 label `a. autentikasi` … `m. keamanan konfigurasi`,
 `owasptop10` teks bebas seperti `A01:2021`, `id_dok_aplikasi` integer.

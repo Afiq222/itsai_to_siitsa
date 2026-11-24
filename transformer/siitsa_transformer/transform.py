@@ -102,12 +102,6 @@ def transform_finding(
             f"tetap dipakai severity ITS AI."
         )
 
-    # Kategori: ITS AI tidak memberi Perban 4 / OWASP, jadi kosong dan dipilih validator di SIITSA
-    # (keputusan tim 2026-11-23). Hanya terisi jika tim mengisi config/perban4.json / owasp.json.
-    perban = mapping.perban4(finding_class)
-    owasp = mapping.owasp(finding_class)
-    kamus = mapping.kamus_kerentanan(finding_class)  # None jika tidak ada di kamus SIITSA
-
     # teks
     deskripsi = clean_text(n["description"])
     asumsi = clean_text(n["assumptions"])
@@ -126,12 +120,14 @@ def transform_finding(
     if n["status_ai"].lower() in AI_STATUS_NOT_ACCEPTED:
         warnings.append(f"Status validasi AI '{n['status_ai']}'; validator perlu memutuskan apakah dimasukkan.")
 
+    # id_kamus_kerentanan, perban4, owasptop10: tidak ada di data ITS AI, jadi selalu kosong
+    # dan dipilih validator di SIITSA. Key tetap ada supaya body sama persis dengan form SIITSA.
     temuan_itsa = {
         "id_dok_aplikasi": id_dok_aplikasi,
-        "id_kamus_kerentanan": kamus,
+        "id_kamus_kerentanan": None,
         "subjudul": n["title"],
-        "perban4": perban or "",
-        "owasptop10": owasp or "",
+        "perban4": "",
+        "owasptop10": "",
         "lokasi": n["lokasi"],
         "deskripsi_khusus": deskripsi,
         "dampak_khusus": dampak,
