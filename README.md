@@ -29,8 +29,7 @@ Tes (dari folder `transformer`): `.venv\Scripts\python.exe -m unittest discover 
 transformer/
   siitsa_transformer/
     normalize.py   baca & seragamkan 2 format ITS AI, hitung skor CVSS dari vektor, ambil screenshot
-    mapping.py     label & urutan severity
-    transform.py   rakit temuan_itsa + langkah_poc + peringatan, urut severity, ringkasan
+    transform.py   label severity + rakit temuan_itsa, langkah_poc, peringatan, urutan, ringkasan
     __main__.py    CLI
   tests/           tes unit
   requirements.txt

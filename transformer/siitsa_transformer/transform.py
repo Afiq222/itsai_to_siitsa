@@ -12,7 +12,6 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from . import mapping
 from .normalize import FORMAT_LABELS, clean_text, detect_format, normalize_finding
 
 FORMAT = "siitsa.temuan-import/v1"
@@ -22,6 +21,43 @@ AI_STATUS_NOT_ACCEPTED = {"rejected", "inconclusive", "false-positive", "false_p
 
 class TransformError(ValueError):
     """Input bukan JSON temuan ITS AI yang valid."""
+
+
+# ---------------------------------------------------------------- severity
+
+# Label = pilihan dropdown Severity di form SIITSA, urut dari paling parah.
+SEVERITY_ORDER = ["Critical", "High", "Medium", "Low", "Info"]
+
+_SEVERITY_ALIASES = {
+    "critical": "Critical", "kritis": "Critical",
+    "high": "High", "tinggi": "High",
+    "medium": "Medium", "sedang": "Medium", "moderate": "Medium",
+    "low": "Low", "rendah": "Low",
+}
+
+
+def severity_label(value: str | None) -> str:
+    """Severity ITS AI -> label SIITSA; nilai tak dikenal (mis. "info") menjadi "Info"."""
+    return _SEVERITY_ALIASES.get((value or "").strip().lower(), "Info")
+
+
+def severity_from_cvss(score: float | None) -> str | None:
+    """Rating dari skor CVSS (rentang v3.1 dan v4.0 sama); hanya untuk pembanding/peringatan."""
+    if score is None:
+        return None
+    if score >= 9.0:
+        return "Critical"
+    if score >= 7.0:
+        return "High"
+    if score >= 4.0:
+        return "Medium"
+    if score > 0.0:
+        return "Low"
+    return "Info"
+
+
+def severity_rank(label: str) -> int:
+    return SEVERITY_ORDER.index(label) if label in SEVERITY_ORDER else len(SEVERITY_ORDER)
 
 
 # ---------------------------------------------------------------- teks
@@ -89,9 +125,9 @@ def transform_finding(
     is_candidate = finding_class.endswith(("-untested", "-candidate")) or "(candidate)" in n["title"]
 
     # severity: selalu dari ITS AI; skor CVSS hanya dibandingkan untuk peringatan.
-    severity = mapping.severity_label(n["severity"])
+    severity = severity_label(n["severity"])
     score = n["cvss_score"]
-    cvss_sev = mapping.severity_from_cvss(score)
+    cvss_sev = severity_from_cvss(score)
     if n["cvss_vector"] and score is None:
         warnings.append(f"Vektor CVSS '{n['cvss_vector']}' tidak bisa dihitung; kolom cvss dikosongkan.")
     elif not n["cvss_vector"]:
@@ -215,10 +251,10 @@ def transform_report(
         if isinstance(f, dict)
     ]
     # Urut severity (stabil: urutan asli dipertahankan dalam severity yang sama).
-    items.sort(key=lambda t: mapping.severity_rank(t["temuan_itsa"]["severity"]))
+    items.sort(key=lambda t: severity_rank(t["temuan_itsa"]["severity"]))
     items = [{"no": no, **item} for no, item in enumerate(items, start=1)]
 
-    per_severity = {label: 0 for label in mapping.SEVERITY_ORDER}
+    per_severity = {label: 0 for label in SEVERITY_ORDER}
     for item in items:
         per_severity[item["temuan_itsa"]["severity"]] += 1
 
