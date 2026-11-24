@@ -30,8 +30,8 @@ def clean_text(value: Any) -> str:
 
 
 FORMAT_LABELS = {
-    "findings-export": "findings.json (ekspor ITS AI, dengan gambar)",
-    "api-response": "JSON API ITS AI (tanpa gambar)",
+    "findings-export": "JSON dengan gambar",
+    "api-response": "JSON tanpa gambar",
 }
 
 
