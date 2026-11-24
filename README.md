@@ -17,21 +17,24 @@ python -m venv .venv
 .venv\Scripts\python.exe -m siitsa_transformer "E:\New folder\response2.json" --id-dok-aplikasi 2
 ```
 
-Hasil: `output/<nama>.siitsa.json` (ubah dengan `-o file.json`). Opsi lain: `--tanpa-gambar`
+Hasil: `transformer/output/<nama>.siitsa.json` (ubah dengan `-o file.json`). Opsi lain: `--tanpa-gambar`
 mengabaikan screenshot. Ringkasan jumlah temuan, langkah POC, gambar, dan peringatan dicetak di terminal.
+Folder `output/` tidak ikut ke git karena berisi data hasil pentest.
 
-Tes: `.venv\Scripts\python.exe -m unittest discover -s tests`
+Tes (dari folder `transformer`): `.venv\Scripts\python.exe -m unittest discover -s tests`
 
 ## Struktur
 
 ```
-siitsa_transformer/
-  normalize.py   baca & seragamkan 2 format ITS AI, hitung skor CVSS dari vektor, ambil screenshot
-  mapping.py     label severity, Perban 4, OWASP, kamus kerentanan (dari config/)
-  transform.py   rakit temuan_itsa + langkah_poc + peringatan, urut severity, ringkasan
-  __main__.py    CLI
-config/          tabel findingClass → perban4 / owasp / id_kamus_kerentanan
-tests/           tes unit
+transformer/
+  siitsa_transformer/
+    normalize.py   baca & seragamkan 2 format ITS AI, hitung skor CVSS dari vektor, ambil screenshot
+    mapping.py     label severity, Perban 4, OWASP, kamus kerentanan (dari config/)
+    transform.py   rakit temuan_itsa + langkah_poc + peringatan, urut severity, ringkasan
+    __main__.py    CLI
+  config/          tabel findingClass → perban4 / owasp / id_kamus_kerentanan
+  tests/           tes unit
+  requirements.txt
 ```
 
 ## Format input (dideteksi otomatis)
@@ -75,8 +78,8 @@ Gambar (format findings.json): screenshot berketerangan "step i/n" dipasang ke l
 | SIITSA | Dari ITS AI |
 |---|---|
 | `subjudul` | `title` |
-| `perban4`, `owasptop10` | kosong (`""`): tidak ada di ITS AI, dipilih validator (`config/perban4.json`, `config/owasp.json` bisa diisi nanti) |
-| `id_kamus_kerentanan` | `findingClass` → `config/kamus_kerentanan.json`; `null` jika tidak ada di kamus |
+| `perban4`, `owasptop10` | kosong (`""`): tidak ada di ITS AI, dipilih validator (`transformer/config/perban4.json`, `transformer/config/owasp.json` bisa diisi nanti) |
+| `id_kamus_kerentanan` | `findingClass` → `transformer/config/kamus_kerentanan.json`; `null` jika tidak ada di kamus |
 | `lokasi`, `method` | `affected.url` (+ parameter) dan `affected.method`, atau `location` "METHOD url (param x)" dipecah |
 | `deskripsi_khusus` | `description` (+ `Asumsi: ...` jika ada) |
 | `dampak_khusus` | `businessImpact` / `impact`, tanpa paragraf baku asumsi CVSS |
