@@ -68,7 +68,7 @@ class FindingTest(unittest.TestCase):
         poc = transform_finding(finding())["langkah_poc"]
         self.assertEqual([{k: x[k] for k in ("id_temuan", "poc")} for x in poc],
                          [{"id_temuan": None, "poc": "satu"}, {"id_temuan": None, "poc": "dua"}])
-        self.assertEqual([x["gambar_poc"] for x in poc], [None, None])
+        self.assertEqual([x["gambarpoc"] for x in poc], [None, None])
 
     def test_severity_from_its_ai_with_warning_on_cvss_mismatch(self):
         r = transform_finding(finding(severity="medium", cvssScore=7.1))
@@ -161,8 +161,8 @@ class ImageAndFormatTest(unittest.TestCase):
         f = finding(evidence=[self.evidence("Live pentest step 2/3 - x"), self.evidence("Baseline profile")])
         r = transform_report({"schema": "vacti.findings/v1", "findings": [f]})
         t = r["temuan"][0]
-        self.assertIsNone(t["langkah_poc"][0]["gambar_poc"])
-        g = t["langkah_poc"][1]["gambar_poc"]
+        self.assertIsNone(t["langkah_poc"][0]["gambarpoc"])
+        g = t["langkah_poc"][1]["gambarpoc"]
         self.assertEqual((g["nama_file"], g["mime"], g["base64"]), ("F-01-langkah-2.png", "image/png", PNG))
         self.assertEqual([b["nama_file"] for b in t["bukti_gambar"]], ["F-01-bukti-2.png"])
         self.assertEqual((r["ringkasan"]["jumlah_gambar_poc"], r["ringkasan"]["jumlah_bukti_gambar"]), (1, 1))
@@ -175,7 +175,7 @@ class ImageAndFormatTest(unittest.TestCase):
     def test_without_images(self):
         f = finding(evidence=[self.evidence("step 1/2")])
         t = transform_report({"findings": [f]}, sertakan_gambar=False)["temuan"][0]
-        self.assertIsNone(t["langkah_poc"][0]["gambar_poc"])
+        self.assertIsNone(t["langkah_poc"][0]["gambarpoc"])
         self.assertEqual(t["bukti_gambar"], [])
 
     def test_format_detected_automatically(self):

@@ -182,14 +182,14 @@ def transform_finding(
     if not steps:
         warnings.append("reproSteps kosong; tidak ada langkah POC.")
     # {id_temuan, poc} = body persis POST /api/langkah-poc SIITSA; urutan langkah = urutan array.
-    # gambar_poc (opsional) di-upload terpisah: POST /api/langkah-poc/{id}/gambarpoc (multipart).
-    langkah_poc = [{"id_temuan": None, "poc": text, "gambar_poc": None} for text in steps]
+    # gambarpoc (opsional) di-upload terpisah: POST /api/langkah-poc/{id}/gambarpoc (multipart).
+    langkah_poc = [{"id_temuan": None, "poc": text, "gambarpoc": None} for text in steps]
     bukti_gambar = []
     shots = n["screenshots"] if sertakan_gambar else []
     for idx, shot in enumerate(shots, start=1):
         step = shot["langkah"]
-        if step and 1 <= step <= len(langkah_poc) and langkah_poc[step - 1]["gambar_poc"] is None:
-            langkah_poc[step - 1]["gambar_poc"] = {
+        if step and 1 <= step <= len(langkah_poc) and langkah_poc[step - 1]["gambarpoc"] is None:
+            langkah_poc[step - 1]["gambarpoc"] = {
                 "nama_file": f"{n['ref'] or 'temuan'}-langkah-{step}.{shot['ext']}",
                 "mime": shot["mime"],
                 "keterangan": shot["keterangan"],
@@ -281,7 +281,7 @@ def transform_report(
             "jumlah_temuan": len(items),
             "jumlah_langkah_poc": sum(len(i["langkah_poc"]) for i in items),
             "per_severity": per_severity,
-            "jumlah_gambar_poc": sum(1 for i in items for p in i["langkah_poc"] if p["gambar_poc"]),
+            "jumlah_gambar_poc": sum(1 for i in items for p in i["langkah_poc"] if p["gambarpoc"]),
             "jumlah_bukti_gambar": sum(len(i["bukti_gambar"]) for i in items),
             "jumlah_peringatan": sum(len(i["peringatan"]) for i in items),
         },
