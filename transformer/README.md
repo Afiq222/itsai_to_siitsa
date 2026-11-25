@@ -6,14 +6,13 @@ Mengubah file JSON temuan **ITS AI** menjadi JSON berformat temuan **SIITSA**:
 - 1 langkah `reproSteps` → 1 body `langkah_poc` (`id_temuan`, `poc`) untuk `POST /api/langkah-poc`
 
 Murni konversi file: **tidak memakai AI**, tidak terhubung ke ITS AI maupun SIITSA, dan tidak ada server.
-Teks dipindahkan apa adanya dari ITS AI. Kode ada di folder [`transformer/`](transformer).
+Teks dipindahkan apa adanya dari ITS AI.
 
 ## Instalasi (sekali saja)
 
-Butuh Python 3.10 ke atas. Dari folder root repo:
+Butuh Python 3.10 ke atas. Semua perintah dijalankan dari folder `transformer` ini:
 
 ```powershell
-cd transformer
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
@@ -21,8 +20,6 @@ python -m venv .venv
 Satu-satunya dependensi adalah `cvss` (menghitung skor CVSS 3.x/4.0 dari vektor).
 
 ## Menjalankan
-
-Dari folder `transformer`:
 
 ```powershell
 .venv\Scripts\python.exe -m siitsa_transformer "D:\data\response3.json" --id-dok-aplikasi 2
@@ -37,7 +34,7 @@ Contoh keluaran di terminal:
 | Opsi | Arti |
 |---|---|
 | `input` | file JSON ITS AI; formatnya dideteksi otomatis. File ber-BOM (hasil simpan Notepad) juga diterima |
-| `-o`, `--output` | lokasi file hasil (default `transformer/output/<nama>.siitsa.json`) |
+| `-o`, `--output` | lokasi file hasil (default `output/<nama>.siitsa.json`) |
 | `--id-dok-aplikasi` | angka `id_dok_aplikasi` dokumen aplikasi di SIITSA (boleh dikosongkan, hasilnya `null`) |
 | `--tanpa-gambar` | abaikan screenshot evidence, file hasil jadi jauh lebih kecil |
 
