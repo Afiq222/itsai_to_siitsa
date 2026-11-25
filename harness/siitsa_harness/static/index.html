@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review Temuan</title>
+<style>
+  :root {
+    --bg:#f5f6f8; --card:#fff; --text:#1d2330; --muted:#5d6678; --line:#dde1e8; --accent:#1f5fbf;
+    --ok:#1a7f37; --warn:#9a5b00; --err:#b42318; --ai:#6b3fb5; --soft:#eef2f9;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background:var(--card); border-bottom:1px solid var(--line); padding:12px 16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  header h1 { font-size:17px; margin:0 12px 0 0; }
+  .badge { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; font-weight:600; background:var(--soft); color:var(--muted); white-space:nowrap; }
+  .b-ok { background:#e6f4ea; color:var(--ok); } .b-warn { background:#fff4e0; color:var(--warn); }
+  .b-err { background:#fdecea; color:var(--err); } .b-ai { background:#f1eafb; color:var(--ai); }
+  .b-Critical { background:#7a1010; color:#fff; } .b-High { background:#d4380d; color:#fff; }
+  .b-Medium { background:#f0a020; color:#1d2330; } .b-Low { background:#2f7d32; color:#fff; } .b-Info { background:#6b7380; color:#fff; }
+  button, select, input, textarea { font:inherit; }
+  button { padding:6px 12px; border:1px solid var(--line); border-radius:6px; background:#fff; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  button.ok { background:var(--ok); border-color:var(--ok); color:#fff; font-weight:600; }
+  button:disabled { opacity:.5; cursor:default; }
+  select, input[type=number] { padding:5px 6px; border:1px solid var(--line); border-radius:6px; background:#fff; }
+  .grow { flex:1; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  main { display:grid; grid-template-columns:340px minmax(0, 1fr); gap:16px; padding:16px; align-items:start; }
+  main > *, .pair > *, .kat > * { min-width:0; }
+  header .bar { max-width:100%; min-width:0; }
+  #jobs { min-width:0; max-width:100%; flex:1 1 220px; }
+  .meta { grid-template-columns:110px minmax(0, 1fr) !important; }
+  .meta div { overflow-wrap:anywhere; }
+  .item .t { overflow-wrap:anywhere; }
+  h2 { overflow-wrap:anywhere; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; }
+  #list { max-height:calc(100vh - 150px); overflow:auto; }
+  .item { padding:8px 12px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .item:hover { background:var(--soft); } .item.active { background:#e3ebfa; }
+  .item .t { margin-top:2px; }
+  #detail { padding:16px; min-height:300px; }
+  .muted { color:var(--muted); } .err { color:var(--err); } .warn { color:var(--warn); }
+  h2 { font-size:16px; margin:0 0 6px; } h3 { font-size:14px; margin:18px 0 6px; }
+  .meta { display:grid; grid-template-columns:110px 1fr; gap:2px 10px; font-size:13px; margin:8px 0; }
+  .meta div:nth-child(odd) { color:var(--muted); }
+  .pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .pair > div > .lbl { font-size:12px; color:var(--muted); margin-bottom:2px; }
+  pre.asli { margin:0; white-space:pre-wrap; word-break:break-word; background:var(--soft); border:1px solid var(--line); border-radius:6px; padding:8px; font:13px/1.45 ui-monospace, Consolas, monospace; max-height:260px; overflow:auto; }
+  textarea { width:100%; min-height:90px; padding:8px; border:1px solid var(--line); border-radius:6px; resize:vertical; font:13px/1.45 system-ui, sans-serif; }
+  textarea.short { min-height:40px; }
+  .kat { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+  .kat label { display:block; font-size:12px; color:var(--muted); margin-bottom:2px; }
+  .kat select { width:100%; }
+  .alasan { font-size:12px; color:var(--ai); margin-top:3px; }
+  .notes { background:#fff8ec; border:1px solid #f3d9a8; border-radius:6px; padding:8px 10px; font-size:13px; margin:8px 0; }
+  .notes ul { margin:4px 0 0; padding-left:18px; }
+  .actions { position:sticky; bottom:0; background:var(--card); border-top:1px solid var(--line); padding:10px 0 0; margin-top:16px; display:flex; flex-wrap:wrap; gap:8px; }
+  img.poc { max-width:100%; max-height:160px; border:1px solid var(--line); border-radius:4px; margin-top:4px; }
+  #msg { min-height:20px; }
+  @media (max-width:900px) { main { grid-template-columns:minmax(0, 1fr); } .pair, .kat { grid-template-columns:minmax(0, 1fr); } #list { max-height:none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Review Temuan</h1>
+  <span id="aiStatus" class="badge">memeriksa AI…</span>
+  <form id="upload" class="bar">
+    <input id="file" type="file" accept=".json,application/json" required>
+    <input id="idDok" type="number" min="1" placeholder="id_dok_aplikasi" style="width:140px">
+    <button class="primary" type="submit">Upload</button>
+  </form>
+  <span class="grow"></span>
+  <div class="bar">
+    <select id="jobs"><option value="">— pilih pekerjaan —</option></select>
+    <button id="btnProses" disabled>Proses AI</button>
+    <button id="btnEkspor" disabled>Ekspor disetujui</button>
+    <button id="btnHapus" disabled>Hapus</button>
+  </div>
+</header>
+<div style="padding:8px 16px 0"><span id="msg" class="muted"></span></div>
+<main>
+  <section class="card"><div id="list"><p class="muted" style="padding:12px">Upload file hasil transformer (*.siitsa.json) atau JSON ITS AI, lalu pilih pekerjaan.</p></div></section>
+  <section class="card" id="detail"><p class="muted">Pilih temuan di daftar kiri.</p></section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const STATUS_LABEL = { belum_diproses:"belum diproses", diproses:"sedang diproses", draf:"draf", perlu_cek:"perlu cek", disetujui:"disetujui" };
+const STATUS_CLASS = { belum_diproses:"", diproses:"b-ai", draf:"b-warn", perlu_cek:"b-err", disetujui:"b-ok" };
+let pilihan = null, jobId = "", job = null, aktif = null, temuan = null, poll = null;
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else if (v !== undefined && v !== null) e.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) if (k !== null && k !== undefined) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+}
+function badge(text, cls = "") { return el("span", { class: "badge " + cls, text }); }
+function pesan(text, cls = "muted") { $("msg").className = cls; $("msg").textContent = text; }
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts);
+  const ct = res.headers.get("content-type") || "";
+  const data = ct.includes("json") ? await res.json() : null;
+  if (!res.ok) throw new Error(data && data.detail ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail)) : res.statusText);
+  return data;
+}
+const jsonBody = (obj) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj) });
+
+async function init() {
+  const s = await api("/api/status");
+  pilihan = s.pilihan;
+  $("aiStatus").className = "badge " + (s.ai_siap ? "b-ok" : "b-warn");
+  $("aiStatus").textContent = s.ai_siap ? "AI lokal: " + s.model : "AI belum dikonfigurasi (review manual)";
+  $("aiStatus").title = s.ai_siap ? "" : "Isi LLM_BASE_URL dan LLM_MODEL di harness/.env lalu jalankan ulang server.";
+  window.aiSiap = s.ai_siap;
+  await muatDaftarJob();
+}
+
+async function muatDaftarJob(pilih) {
+  const jobs = await api("/api/jobs");
+  const sel = $("jobs"); sel.textContent = "";
+  sel.append(el("option", { value: "", text: "— pilih pekerjaan —" }));
+  for (const j of jobs) sel.append(el("option", { value: j.id, text: `${j.nama_file || j.id} (${j.jumlah_temuan} temuan, ${j.per_status.disetujui} disetujui)` }));
+  if (pilih !== undefined) sel.value = pilih;
+}
+
+async function bukaJob(id) {
+  jobId = id; aktif = null; temuan = null;
+  $("detail").textContent = ""; $("detail").append(el("p", { class: "muted", text: "Pilih temuan di daftar kiri." }));
+  await segarkanJob();
+}
+
+async function segarkanJob() {
+  clearTimeout(poll);
+  if (!jobId) { $("list").textContent = ""; ["btnProses","btnEkspor","btnHapus"].forEach(b => $(b).disabled = true); return; }
+  job = await api("/api/jobs/" + jobId);
+  const ps = job.per_status;
+  const proses = job.status === "diproses";
+  $("btnProses").disabled = proses || !window.aiSiap || !ps.belum_diproses;
+  $("btnProses").title = !window.aiSiap ? "AI belum dikonfigurasi" : "";
+  $("btnEkspor").disabled = !ps.disetujui; $("btnHapus").disabled = proses;
+  let info = `${job.engagement || job.nama_file}: ${job.jumlah_temuan} temuan — ` +
+    Object.entries(ps).filter(([, n]) => n).map(([k, n]) => `${STATUS_LABEL[k]} ${n}`).join(", ");
+  if (proses) info += ` — AI memproses ${job.progres.selesai}/${job.progres.total}…`;
+  if (job.error) pesan("Gagal: " + job.error, "err");
+  else if (job.status === "terhenti" && job.pesan) pesan(job.pesan + " — " + info, "warn");
+  else pesan(info);
+  renderList();
+  if (proses) poll = setTimeout(async () => { await segarkanJob(); if (aktif) await bukaTemuan(aktif, true); }, 2000);
+}
+
+function renderList() {
+  const list = $("list"); list.textContent = "";
+  for (const t of job.temuan) {
+    const row = el("div", { class: "item" + (t.no === aktif ? " active" : ""), onclick: () => bukaTemuan(t.no) },
+      el("div", { class: "bar" }, badge(t.severity, "b-" + t.severity), el("strong", { text: "#" + t.no }),
+        badge(STATUS_LABEL[t.status], STATUS_CLASS[t.status]),
+        t.kemungkinan_duplikat.length ? badge("duplikat?", "b-warn") : null,
+        t.status_ai && t.status_ai !== "accepted" && t.status_ai !== "Open" ? badge("AI: " + t.status_ai, "b-err") : null),
+      el("div", { class: "t", text: t.subjudul }));
+    list.append(row);
+  }
+}
+
+async function bukaTemuan(no, diam = false) {
+  aktif = no;
+  if (!diam) renderList();
+  temuan = await api(`/api/jobs/${jobId}/temuan/${no}`);
+  renderDetail();
+}
+
+function pasangan(judul, asli, nilai, id, pendek = false) {
+  return el("div", {}, el("h3", { text: judul }),
+    el("div", { class: "pair" },
+      el("div", {}, el("div", { class: "lbl", text: "Asli (dari transformer)" }), el("pre", { class: "asli", text: asli || "(kosong)" })),
+      el("div", {}, el("div", { class: "lbl", text: "Hasil (boleh diedit)" }),
+        el("textarea", { id, class: pendek ? "short" : "" }, nilai || ""))));
+}
+
+function pilihKategori(label, id, opsi, nilai, sumber, rek) {
+  const sel = el("select", { id }, el("option", { value: "", text: "— kosong —" }),
+    opsi.map(([v, t]) => el("option", { value: v, text: t })));
+  sel.value = nilai === null || nilai === undefined ? "" : String(nilai);
+  const tag = sumber === "rekomendasi_ai" ? badge("Rekomendasi AI", "b-ai") : sumber === "validator" ? badge("Diubah validator", "b-ok") : null;
+  return el("div", {}, el("label", { text: label + " " }, tag), sel,
+    rek && rek.alasan ? el("div", { class: "alasan", text: "Alasan AI: " + rek.alasan }) : null);
+}
+
+function renderDetail() {
+  const t = temuan, b = t.temuan_itsa, h = t.hasil, a = t.asli, terkunci = t.status === "diproses";
+  const rek = (t.ai && t.ai.rekomendasi) || {};
+  const d = $("detail"); d.textContent = "";
+  d.append(el("div", { class: "bar" }, badge(b.severity, "b-" + b.severity), el("h2", { text: `#${t.no} ${h.subjudul}` })));
+  d.append(el("div", { class: "bar" }, badge(STATUS_LABEL[t.status], STATUS_CLASS[t.status]),
+    t.kemungkinan_duplikat.length ? badge("kemungkinan duplikat dengan #" + t.kemungkinan_duplikat.join(", #"), "b-warn") : null));
+  d.append(el("div", { class: "meta" },
+    el("div", { text: "Ref" }), el("div", { text: t.ref }),
+    el("div", { text: "Jenis (ITS AI)" }), el("div", { text: t.findingClass }),
+    el("div", { text: "Status AI" }), el("div", { text: t.status_ai || "-" }),
+    el("div", { text: "CVSS" }), el("div", { text: `${b.cvss || "-"}  ${b.cvss_string || ""}` }),
+    el("div", { text: "Method / lokasi" }), el("div", { text: `${b.method || "-"}  ${b.lokasi || "-"}` })));
+
+  const catatan = [...(t.error_ai ? ["Error AI: " + t.error_ai] : []), ...t.catatan_ai, ...t.peringatan.map(p => "Transformer: " + p)];
+  if (catatan.length) d.append(el("div", { class: "notes" }, el("strong", { text: "Catatan untuk validator" }), el("ul", {}, catatan.map(c => el("li", { text: c })))));
+  if (!t.ai && t.status === "belum_diproses") d.append(el("p", { class: "muted", text: "Belum diproses AI. Kolom hasil masih berisi teks asli; bisa diedit manual." }));
+
+  d.append(pasangan("Subjudul", a.subjudul, h.subjudul, "f_subjudul", true));
+  d.append(pasangan("Deskripsi", a.deskripsi_khusus, h.deskripsi_khusus, "f_deskripsi"));
+  d.append(pasangan("Dampak", a.dampak_khusus, h.dampak_khusus, "f_dampak"));
+  d.append(pasangan("Rekomendasi", a.rekom_khusus, h.rekom_khusus, "f_rekom"));
+
+  d.append(el("h3", { text: "Kategori" }));
+  const owasp = Array.from({ length: 10 }, (_, i) => { const v = `A${String(i + 1).padStart(2, "0")}:2021`; return [v, v]; });
+  if (h.owasptop10 && !owasp.some(([v]) => v === h.owasptop10)) owasp.push([h.owasptop10, h.owasptop10]);
+  d.append(el("div", { class: "kat" },
+    pilihKategori("Perban 4", "f_perban4", pilihan.perban4.map(v => [v, v]), h.perban4, t.kategori_sumber.perban4, rek.perban4),
+    pilihKategori("OWASP Top 10", "f_owasp", owasp, h.owasptop10, t.kategori_sumber.owasptop10, rek.owasptop10),
+    pilihKategori("Kamus kerentanan", "f_kamus", Object.entries(pilihan.kamus).map(([k, v]) => [k, `${k}. ${v}`]),
+      h.id_kamus_kerentanan, t.kategori_sumber.id_kamus_kerentanan, rek.id_kamus_kerentanan)));
+
+  d.append(el("h3", { text: `Langkah POC (${a.langkah_poc.length})` }));
+  a.langkah_poc.forEach((p, i) => {
+    const g = (t.langkah_poc_asli[i] || {}).gambarpoc;
+    d.append(el("div", { class: "pair", style: "margin-bottom:8px" },
+      el("div", {}, el("div", { class: "lbl", text: `Langkah ${i + 1} — asli` }), el("pre", { class: "asli", text: p }),
+        g ? el("img", { class: "poc", src: `data:${g.mime};base64,${g.base64}`, alt: g.keterangan || "gambar POC", title: g.keterangan || "" }) : null),
+      el("div", {}, el("div", { class: "lbl", text: `Langkah ${i + 1} — hasil` }), el("textarea", { id: "f_poc_" + i }, h.langkah_poc[i] || ""))));
+  });
+  if (t.bukti_gambar && t.bukti_gambar.length) {
+    d.append(el("h3", { text: `Bukti gambar lain (${t.bukti_gambar.length}) — pilih langkahnya saat input ke SIITSA` }));
+    d.append(el("div", { class: "bar" }, t.bukti_gambar.map(g => el("img", { class: "poc", src: `data:${g.mime};base64,${g.base64}`, title: g.keterangan || "" }))));
+  }
+
+  const btn = (text, cls, fn) => el("button", { class: cls, onclick: fn, disabled: terkunci ? "" : null }, text);
+  d.append(el("div", { class: "actions" },
+    btn("Simpan", "primary", () => simpan()),
+    t.status === "disetujui" ? btn("Batal setujui", "", () => aksi("batal_setujui")) : btn("Simpan & setujui", "ok", async () => { if (await simpan(true)) await aksi("setujui"); }),
+    btn("Kembalikan teks ke asli", "", () => { if (confirm("Ganti semua teks hasil dengan teks asli?")) aksi("kembalikan_asli"); }),
+    el("button", { onclick: () => prosesUlang(), disabled: terkunci || !window.aiSiap ? "" : null, title: window.aiSiap ? "" : "AI belum dikonfigurasi" }, "Proses ulang AI")));
+  if (terkunci) d.append(el("p", { class: "muted", text: "Sedang diproses AI…" }));
+}
+
+function kumpulkan() {
+  const kamus = $("f_kamus").value;
+  return {
+    subjudul: $("f_subjudul").value, deskripsi_khusus: $("f_deskripsi").value, dampak_khusus: $("f_dampak").value,
+    rekom_khusus: $("f_rekom").value, perban4: $("f_perban4").value, owasptop10: $("f_owasp").value,
+    id_kamus_kerentanan: kamus === "" ? null : Number(kamus),
+    langkah_poc: temuan.asli.langkah_poc.map((_, i) => $("f_poc_" + i).value),
+  };
+}
+
+async function simpan(diam = false) {
+  try {
+    temuan = await api(`/api/jobs/${jobId}/temuan/${aktif}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hasil: kumpulkan() }) });
+    if (!diam) { pesan("Tersimpan.", "muted"); renderDetail(); await segarkanJob(); }
+    return true;
+  } catch (e) { pesan("Gagal menyimpan: " + e.message, "err"); return false; }
+}
+
+async function aksi(nama) {
+  try {
+    temuan = await api(`/api/jobs/${jobId}/temuan/${aktif}/aksi`, jsonBody({ aksi: nama }));
+    renderDetail(); await segarkanJob();
+  } catch (e) { pesan("Gagal: " + e.message, "err"); }
+}
+
+async function prosesUlang() {
+  try { await api(`/api/jobs/${jobId}/temuan/${aktif}/proses`, { method: "POST" }); await segarkanJob(); await bukaTemuan(aktif, true); }
+  catch (e) { pesan("Gagal: " + e.message, "err"); }
+}
+
+$("upload").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData();
+  fd.append("file", $("file").files[0]);
+  if ($("idDok").value) fd.append("id_dok_aplikasi", $("idDok").value);
+  pesan("Mengunggah…");
+  try {
+    const j = await api("/api/jobs", { method: "POST", body: fd });
+    await muatDaftarJob(j.id); await bukaJob(j.id); $("upload").reset();
+  } catch (err) { pesan("Gagal upload: " + err.message, "err"); }
+});
+$("jobs").addEventListener("change", () => bukaJob($("jobs").value));
+$("btnProses").addEventListener("click", async () => {
+  try { await api(`/api/jobs/${jobId}/proses`, { method: "POST" }); await segarkanJob(); }
+  catch (e) { pesan("Gagal: " + e.message, "err"); }
+});
+$("btnEkspor").addEventListener("click", () => { window.location = `/api/jobs/${jobId}/ekspor`; });
+$("btnHapus").addEventListener("click", async () => {
+  if (!confirm("Hapus pekerjaan ini beserta semua editannya?")) return;
+  try { await api("/api/jobs/" + jobId, { method: "DELETE" }); jobId = ""; await muatDaftarJob(""); await segarkanJob(); $("detail").textContent = ""; pesan("Pekerjaan dihapus."); }
+  catch (e) { pesan("Gagal: " + e.message, "err"); }
+});
+init().catch(e => pesan("Gagal memuat: " + e.message, "err"));
+</script>
+</body>
+</html>

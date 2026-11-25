@@ -1,6 +1,14 @@
 # Data hasil pentest (sensitif) dan file buatan otomatis
 transformer/output/
+harness/data/
+
+# Pengaturan lokal
+.env
 
 # Python
 transformer/.venv/
+harness/.venv/
 __pycache__/
+
+# Pengaturan alat lokal
+.claude/
