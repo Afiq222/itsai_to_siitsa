@@ -1,4 +1,10 @@
+import codecs
+import contextlib
+import io
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from siitsa_transformer import TransformError, split_repro_steps, transform_finding, transform_report
 
@@ -196,6 +202,29 @@ class ReportTest(unittest.TestCase):
         self.assertEqual([t["ref"] for t in r["temuan"]], ["B", "A"])
         self.assertEqual([t["no"] for t in r["temuan"]], [1, 2])
         self.assertEqual(r["ringkasan"]["jumlah_langkah_poc"], 4)
+
+
+class CliTest(unittest.TestCase):
+    def run_cli(self, raw: bytes):
+        from siitsa_transformer.__main__ import main
+        with tempfile.TemporaryDirectory() as d:
+            src, out = Path(d, "in.json"), Path(d, "out.json")
+            src.write_bytes(raw)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                code = main([str(src), "-o", str(out)])
+            return code, (json.loads(out.read_text(encoding="utf-8")) if out.exists() else None)
+
+    def test_accepts_file_with_utf8_bom(self):
+        # File yang disimpan ulang dengan Notepad Windows diawali BOM (EF BB BF).
+        raw = codecs.BOM_UTF8 + json.dumps({"findings": [finding()]}).encode("utf-8")
+        code, result = self.run_cli(raw)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["ringkasan"]["jumlah_temuan"], 1)
+
+    def test_invalid_file_fails_without_output(self):
+        code, result = self.run_cli(b"bukan json")
+        self.assertEqual(code, 1)
+        self.assertIsNone(result)
 
 
 if __name__ == "__main__":

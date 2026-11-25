@@ -19,7 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     try:
-        data = json.loads(args.input.read_text(encoding="utf-8"))
+        data = json.loads(args.input.read_text(encoding="utf-8-sig"))  # utf-8-sig: terima juga file ber-BOM (Notepad)
         result = transform_report(data, args.id_dok_aplikasi, args.input.name,
                                   sertakan_gambar=not args.tanpa_gambar)
     except (OSError, json.JSONDecodeError, TransformError) as exc:
