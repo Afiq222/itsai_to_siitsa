@@ -118,41 +118,32 @@ def extract_screenshots(evidence: Any) -> list[dict[str, Any]]:
 
 def normalize_finding(f: dict[str, Any], fmt: str) -> dict[str, Any]:
     if fmt == "findings-export":
-        narrative = f.get("narrative") or {}
+        nar = f.get("narrative") or {}
         affected = f.get("affected") or {}
+        ref = clean_text(f.get("ref")) or clean_text(f.get("id"))
         vector = clean_text(f.get("cvssVector"))
-        score = _num(f.get("cvssScore"))
-        return {
-            "ref": clean_text(f.get("ref")) or clean_text(f.get("id")),
-            "title": clean_text(f.get("title")),
-            "severity": clean_text(f.get("severity")),
-            "cvss_vector": vector,
-            "cvss_score": score if score is not None else cvss_score(vector),
-            "finding_class": clean_text(f.get("findingClass")).lower(),
-            "status_ai": clean_text(f.get("status")),
-            "verification": clean_text(f.get("verification")),
-            "method": clean_text(affected.get("method")).upper(),
-            "lokasi": _lokasi_from_affected(affected),
-            "description": narrative.get("description"),
-            "impact": narrative.get("businessImpact"),
-            "remediation": narrative.get("remediation"),
-            "assumptions": narrative.get("assumptions"),
-            "repro_steps": narrative.get("reproSteps"),
-            "walkthrough": None,
-            "screenshots": extract_screenshots(f.get("evidence")),
-        }
+        method, lokasi = clean_text(affected.get("method")).upper(), _lokasi_from_affected(affected)
+        teks = {"description": nar.get("description"), "impact": nar.get("businessImpact"),
+                "remediation": nar.get("remediation"), "assumptions": nar.get("assumptions"),
+                "repro_steps": nar.get("reproSteps"), "walkthrough": None}
+    else:
+        # api-response: utamakan teks Bahasa Indonesia di locales, lalu field utama.
+        loc = f.get("locales") or {}
 
-    # api-response: utamakan teks Bahasa Indonesia di locales, lalu field utama.
-    loc = f.get("locales") or {}
+        def pick(locale_key: str, top_key: str) -> str:
+            return clean_text(loc.get(locale_key)) or clean_text(f.get(top_key))
 
-    def pick(locale_key: str, top_key: str) -> str:
-        return clean_text(loc.get(locale_key)) or clean_text(f.get(top_key))
+        ref = clean_text(f.get("id")) or clean_text(f.get("ref"))
+        vector = clean_text(f.get("cvss") or f.get("cvssVector"))
+        method, lokasi = split_location(clean_text(f.get("location")))
+        teks = {"description": pick("descriptionId", "description"), "impact": pick("businessImpactId", "impact"),
+                "remediation": pick("remediationId", "remediation"), "assumptions": f.get("assumptions"),
+                "repro_steps": pick("reproStepsId", "reproSteps"),
+                "walkthrough": pick("reproWalkthroughId", "reproWalkthrough")}
 
-    vector = clean_text(f.get("cvss") or f.get("cvssVector"))
     score = _num(f.get("cvssScore"))
-    method, lokasi = split_location(clean_text(f.get("location")))
     return {
-        "ref": clean_text(f.get("id")) or clean_text(f.get("ref")),
+        "ref": ref,
         "title": clean_text(f.get("title")),
         "severity": clean_text(f.get("severity")),
         "cvss_vector": vector,
@@ -162,12 +153,7 @@ def normalize_finding(f: dict[str, Any], fmt: str) -> dict[str, Any]:
         "verification": clean_text(f.get("verification")),
         "method": method,
         "lokasi": lokasi,
-        "description": pick("descriptionId", "description"),
-        "impact": pick("businessImpactId", "impact"),
-        "remediation": pick("remediationId", "remediation"),
-        "assumptions": f.get("assumptions"),
-        "repro_steps": pick("reproStepsId", "reproSteps"),
-        "walkthrough": pick("reproWalkthroughId", "reproWalkthrough"),
-        # Format API tidak membawa gambar; dukung evidence[] jika suatu saat ikut disertakan.
+        **teks,
+        # Format API biasanya tanpa gambar; evidence[] tetap dibaca jika ada.
         "screenshots": extract_screenshots(f.get("evidence")),
     }

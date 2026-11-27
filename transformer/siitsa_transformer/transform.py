@@ -28,17 +28,10 @@ class TransformError(ValueError):
 # Label = pilihan dropdown Severity di form SIITSA, urut dari paling parah.
 SEVERITY_ORDER = ["Critical", "High", "Medium", "Low", "Info"]
 
-_SEVERITY_ALIASES = {
-    "critical": "Critical", "kritis": "Critical",
-    "high": "High", "tinggi": "High",
-    "medium": "Medium", "sedang": "Medium", "moderate": "Medium",
-    "low": "Low", "rendah": "Low",
-}
-
-
 def severity_label(value: str | None) -> str:
-    """Severity ITS AI -> label SIITSA; nilai tak dikenal (mis. "info") menjadi "Info"."""
-    return _SEVERITY_ALIASES.get((value or "").strip().lower(), "Info")
+    """Severity ITS AI ("critical", "HIGH", ...) -> label SIITSA; nilai tak dikenal menjadi "Info"."""
+    label = (value or "").strip().capitalize()
+    return label if label in SEVERITY_ORDER else "Info"
 
 
 def severity_from_cvss(score: float | None) -> str | None:
@@ -188,20 +181,12 @@ def transform_finding(
     shots = n["screenshots"] if sertakan_gambar else []
     for idx, shot in enumerate(shots, start=1):
         step = shot["langkah"]
+        gambar = {"mime": shot["mime"], "keterangan": shot["keterangan"], "base64": shot["base64"]}
         if step and 1 <= step <= len(langkah_poc) and langkah_poc[step - 1]["gambarpoc"] is None:
             langkah_poc[step - 1]["gambarpoc"] = {
-                "nama_file": f"{n['ref'] or 'temuan'}-langkah-{step}.{shot['ext']}",
-                "mime": shot["mime"],
-                "keterangan": shot["keterangan"],
-                "base64": shot["base64"],
-            }
+                "nama_file": f"{n['ref'] or 'temuan'}-langkah-{step}.{shot['ext']}", **gambar}
         else:
-            bukti_gambar.append({
-                "nama_file": f"{n['ref'] or 'temuan'}-bukti-{idx}.{shot['ext']}",
-                "mime": shot["mime"],
-                "keterangan": shot["keterangan"],
-                "base64": shot["base64"],
-            })
+            bukti_gambar.append({"nama_file": f"{n['ref'] or 'temuan'}-bukti-{idx}.{shot['ext']}", **gambar})
     if bukti_gambar:
         warnings.append(
             f"{len(bukti_gambar)} screenshot bukti belum terpasang ke langkah POC tertentu "
@@ -224,7 +209,7 @@ def transform_finding(
 
 def transform_report(
     data: Any,
-    id_dok_aplikasi: int | str | None = None,
+    id_dok_aplikasi: int | None = None,
     source_name: str | None = None,
     sertakan_gambar: bool = True,
 ) -> dict[str, Any]:
@@ -235,15 +220,8 @@ def transform_report(
     fmt = detect_format(data)
     engagement = data.get("engagement") or {}
     engagement_id = clean_text(engagement.get("id")) or None
-    # id_dok_aplikasi = id integer aplikasi di SIITSA (dikirim halaman upload SIITSA).
+    # id_dok_aplikasi = id integer aplikasi di SIITSA (CLI sudah memvalidasi angka).
     # engagement.id ITS AI (UUID) hanya dicatat di "sumber", tidak dipakai sebagai id_dok_aplikasi.
-    if id_dok_aplikasi in (None, ""):
-        id_dok_aplikasi = None
-    else:
-        try:
-            id_dok_aplikasi = int(id_dok_aplikasi)
-        except (TypeError, ValueError) as exc:
-            raise TransformError("id_dok_aplikasi harus berupa angka (id aplikasi di SIITSA).") from exc
 
     items = [
         transform_finding(f, id_dok_aplikasi, fmt, sertakan_gambar)

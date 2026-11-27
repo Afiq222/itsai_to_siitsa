@@ -42,12 +42,6 @@ Kalau gagal (file tidak ada, bukan JSON, atau bukan format ITS AI), CLI mencetak
 
 Folder `output/` tidak ikut ke git karena berisi data hasil pentest.
 
-## Tes
-
-```powershell
-.venv\Scripts\python.exe -m unittest discover -s tests
-```
-
 ## Struktur
 
 ```
@@ -56,7 +50,6 @@ transformer/
     normalize.py   baca & seragamkan 2 format ITS AI, hitung skor CVSS dari vektor, ambil screenshot
     transform.py   label severity + rakit temuan_itsa, langkah_poc, peringatan, urutan, ringkasan
     __main__.py    CLI
-  tests/           tes unit
   requirements.txt
 ```
 

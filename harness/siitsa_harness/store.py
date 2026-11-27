@@ -46,7 +46,7 @@ def item_baru(t: dict[str, Any]) -> dict[str, Any]:
         "asli": asli,
         "ai": None,
         "hasil": {
-            **{k: v for k, v in asli.items()},
+            **asli,
             "langkah_poc": list(asli["langkah_poc"]),
             "perban4": body.get("perban4", ""),
             "owasptop10": body.get("owasptop10", ""),

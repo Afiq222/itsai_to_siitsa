@@ -114,7 +114,7 @@ async function init() {
   const s = await api("/api/status");
   pilihan = s.pilihan;
   $("aiStatus").className = "badge " + (s.ai_siap ? "b-ok" : "b-warn");
-  $("aiStatus").textContent = s.ai_siap ? "AI lokal: " + s.model : "AI belum dikonfigurasi (review manual)";
+  $("aiStatus").textContent = s.ai_siap ? "AI: " + s.model : "AI belum dikonfigurasi (review manual)";
   $("aiStatus").title = s.ai_siap ? "" : "Isi LLM_BASE_URL dan LLM_MODEL di harness/.env lalu jalankan ulang server.";
   window.aiSiap = s.ai_siap;
   await muatDaftarJob();
@@ -270,6 +270,7 @@ async function aksi(nama) {
 }
 
 async function prosesUlang() {
+  if (!confirm("Hasil AI baru akan menimpa editanmu pada temuan ini (status setuju juga dibatalkan). Lanjutkan?")) return;
   try { await api(`/api/jobs/${jobId}/temuan/${aktif}/proses`, { method: "POST" }); await segarkanJob(); await bukaTemuan(aktif, true); }
   catch (e) { pesan("Gagal: " + e.message, "err"); }
 }

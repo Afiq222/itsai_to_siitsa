@@ -91,6 +91,10 @@ def _sumber_kategori(it: dict[str, Any], kunci: str, nilai: Any) -> str:
 
 # ---------------------------------------------------------------- proses latar belakang
 
+def _pesan_error(exc: Exception) -> str:
+    return str(exc) if isinstance(exc, LlmError) else f"Error tak terduga ({type(exc).__name__}): {exc}"
+
+
 def _jalankan(job_id: str, nos: list[int], pakai_cache: bool) -> None:
     try:
         chat = chat_factory(settings)
@@ -107,8 +111,8 @@ def _jalankan(job_id: str, nos: list[int], pakai_cache: bool) -> None:
             try:
                 proses_item(item, chat, settings.llm_model, settings.data_dir / "cache",
                             settings.max_percobaan, pakai_cache)
-            except LlmError as exc:
-                pesan = str(exc)
+            except Exception as exc:  # bukan hanya LlmError: error lain juga harus terlihat, jangan "selesai" diam-diam
+                pesan = _pesan_error(exc)
                 def gagal(job):
                     job["error"] = pesan
                     for it in job["temuan"]:
@@ -125,8 +129,8 @@ def _jalankan(job_id: str, nos: list[int], pakai_cache: bool) -> None:
                         job["temuan"][k] = item
                 job["progres"]["selesai"] = i
             store.ubah(job_id, simpan)
-    except LlmError as exc:
-        store.ubah(job_id, lambda job: job.update(error=str(exc)))
+    except Exception as exc:
+        store.ubah(job_id, lambda job: job.update(error=_pesan_error(exc)))
     finally:
         def selesai(job):
             job["status"] = "selesai" if not job.get("error") else "gagal"
@@ -246,7 +250,10 @@ def simpan_temuan(job_id: str, no: int, hasil: dict[str, Any] = Body(..., embed=
             baru["owasptop10"] = v
         if "id_kamus_kerentanan" in hasil:
             v = hasil["id_kamus_kerentanan"]
-            v = None if v in (None, "") else int(v)
+            try:
+                v = None if v in (None, "") else int(v)
+            except (TypeError, ValueError):
+                raise HTTPException(422, "id_kamus_kerentanan harus 1 sampai 10 atau kosong.") from None
             if v is not None and v not in KAMUS:
                 raise HTTPException(422, "id_kamus_kerentanan harus 1 sampai 10 atau kosong.")
             baru["id_kamus_kerentanan"] = v

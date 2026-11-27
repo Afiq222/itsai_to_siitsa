@@ -128,6 +128,27 @@ class ProsesTest(unittest.TestCase):
         proses_item(item2, lambda m: self.fail("cache tidak dipakai"), "m", self.tmp, 3)
         self.assertEqual(item2["hasil"], self.item["hasil"])
 
+    def test_broken_cache_is_ignored_and_rewritten(self):
+        from siitsa_harness.proses import _cache_key
+        cache = self.tmp / f"{_cache_key('m', self.item)}.json"
+        cache.write_text('{"hasil": {"subjud', encoding="utf-8")  # terpotong, mis. laptop mati saat menulis
+        proses_item(self.item, lambda m: jawaban_ai(), "m", self.tmp, 3)
+        self.assertEqual(self.item["hasil"]["owasptop10"], "A03:2021")
+        self.assertEqual(json.loads(cache.read_text(encoding="utf-8"))["hasil"]["subjudul"],
+                         "SQL Injection pada endpoint walidata-inbox")
+
+    def test_changing_prompt_invalidates_cache(self):
+        from siitsa_harness import proses
+        proses_item(self.item, lambda m: jawaban_ai(), "m", self.tmp, 3)
+        asli = proses.SYSTEM_PROMPT
+        proses.SYSTEM_PROMPT = asli + "\n- Aturan baru."
+        try:
+            dipanggil = []
+            proses_item(item_baru(temuan_transformer()), lambda m: dipanggil.append(1) or jawaban_ai(), "m", self.tmp, 3)
+            self.assertEqual(dipanggil, [1])  # cache lama tidak dipakai
+        finally:
+            proses.SYSTEM_PROMPT = asli
+
     def test_gives_up_after_max_attempts(self):
         item = item_baru(temuan_transformer())
         proses_item(item, lambda m: "maaf, saya tidak bisa", "m", self.tmp, 2)
@@ -159,6 +180,40 @@ class LlmClientTest(unittest.TestCase):
             self.assertEqual(diterima["body"]["model"], "model-uji")
             self.assertEqual(diterima["body"]["temperature"], 0)
         finally:
+            srv.shutdown()
+            srv.server_close()
+
+    def test_retries_busy_server_then_succeeds_but_not_client_errors(self):
+        from siitsa_harness import llm
+        kode = []
+
+        class H(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"]))
+                c = antrian.pop(0)
+                kode.append(c)
+                out = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode() if c == 200 else b"sibuk"
+                self.send_response(c); self.send_header("Content-Length", str(len(out))); self.end_headers(); self.wfile.write(out)
+            def log_message(self, *a):
+                pass
+
+        srv = HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        jeda, llm.JEDA_ULANG = llm.JEDA_ULANG, (0, 0)
+        try:
+            chat = make_chat(Settings(f"http://127.0.0.1:{srv.server_port}/v1", "m", "", 10, 3, Path(".")))
+            antrian = [429, 503, 200]
+            self.assertEqual(chat([{"role": "user", "content": "x"}]), "ok")
+            self.assertEqual(kode, [429, 503, 200])
+            antrian, kode[:] = [429, 429, 429], []
+            with self.assertRaises(LlmError):  # tetap sibuk setelah 3 percobaan
+                chat([{"role": "user", "content": "x"}])
+            antrian, kode[:] = [400, 200], []
+            with self.assertRaises(LlmError):  # error permintaan tidak diulang
+                chat([{"role": "user", "content": "x"}])
+            self.assertEqual(kode, [400])
+        finally:
+            llm.JEDA_ULANG = jeda
             srv.shutdown()
             srv.server_close()
 
@@ -249,6 +304,25 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(j["status"], "gagal")
         self.assertIn("tidak bisa dihubungi", j["error"])
         self.assertTrue(all(t["status"] == "belum_diproses" for t in j["temuan"]))
+
+    def test_unexpected_error_marks_job_failed(self):
+        def rusak(s):
+            def chat(m):
+                raise RuntimeError("sesuatu rusak")
+            return chat
+        api.chat_factory = rusak
+        job = self.upload(self.dok()).json()
+        self.c.post(f"/api/jobs/{job['id']}/proses")
+        j = self.tunggu(job["id"])
+        self.assertEqual(j["status"], "gagal")  # bukan "selesai" diam-diam
+        self.assertIn("Error tak terduga (RuntimeError)", j["error"])
+        self.assertTrue(all(t["status"] == "belum_diproses" for t in j["temuan"]))
+
+    def test_kamus_not_a_number_is_rejected(self):
+        job = self.upload(self.dok()).json()
+        for v in ("abc", "1.5", [1]):
+            r = self.c.put(f"/api/jobs/{job['id']}/temuan/1", json={"hasil": {"id_kamus_kerentanan": v}})
+            self.assertEqual(r.status_code, 422, v)
 
     def test_stuck_job_recovered_on_server_start_and_resumes(self):
         job = self.upload({**self.dok(), "temuan": [temuan_transformer(1), temuan_transformer(2), temuan_transformer(3)]}).json()
