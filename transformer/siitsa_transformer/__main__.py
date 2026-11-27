@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+from .masking import mask_report
 from .transform import TransformError, transform_report
 
 
@@ -20,8 +21,10 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         data = json.loads(args.input.read_text(encoding="utf-8-sig"))  # utf-8-sig: terima juga file ber-BOM (Notepad)
+        # Alur: file ITS AI -> transform ke format SIITSA -> masking data sensitif.
         result = transform_report(data, args.id_dok_aplikasi, args.input.name,
                                   sertakan_gambar=not args.tanpa_gambar)
+        result = mask_report(result)
     except (OSError, json.JSONDecodeError, TransformError) as exc:
         print(f"Gagal: {exc}", file=sys.stderr)
         return 1

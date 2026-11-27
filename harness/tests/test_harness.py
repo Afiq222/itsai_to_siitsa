@@ -274,7 +274,7 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(out["ringkasan"]["tidak_diekspor"], 1)
         body = out["temuan"][0]["temuan_itsa"]
         self.assertEqual((body["perban4"], body["owasptop10"], body["id_kamus_kerentanan"]), ("d. validasi input", "A05:2021", 1))
-        self.assertEqual((body["cvss"], body["severity"], body["lokasi"]), ("9.3", "Critical", "https://t.example/x (parameter: per_page)"))
+        self.assertEqual((body["cvss"], body["severity"], body["lokasi"]), ("9.3", "Critical", "https://[DOMAIN]/x (parameter: per_page)"))  # domain di-mask saat upload
         self.assertEqual(list(out["temuan"][0]["langkah_poc"][0]), ["id_temuan", "poc", "gambarpoc"])
 
     def test_revert_to_original(self):

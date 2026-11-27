@@ -36,6 +36,8 @@ def ke_format_siitsa(data: Any, nama_file: str | None, id_dok_aplikasi: int | No
         raise MasukanError(
             "File tidak dikenali: berikan hasil transformer (*.siitsa.json) atau JSON temuan ITS AI."
         )
+    # Alur: upload -> transform ke format SIITSA -> masking. File *.siitsa.json lama juga di-mask.
+    hasil = _transformer().mask_report(hasil)
     if id_dok_aplikasi is not None:
         hasil["id_dok_aplikasi"] = id_dok_aplikasi
         for t in hasil["temuan"]:
@@ -43,14 +45,19 @@ def ke_format_siitsa(data: Any, nama_file: str | None, id_dok_aplikasi: int | No
     return hasil
 
 
-def _jalankan_transformer(data: dict[str, Any], nama_file: str | None, id_dok_aplikasi: int | None) -> dict[str, Any]:
+def _transformer():
     if str(TRANSFORMER_DIR) not in sys.path:
         sys.path.insert(0, str(TRANSFORMER_DIR))
     try:
-        from siitsa_transformer import TransformError, transform_report
+        import siitsa_transformer
     except ImportError as exc:
         raise MasukanError(f"Transformer tidak ditemukan di {TRANSFORMER_DIR}: {exc}") from exc
+    return siitsa_transformer
+
+
+def _jalankan_transformer(data: dict[str, Any], nama_file: str | None, id_dok_aplikasi: int | None) -> dict[str, Any]:
+    st = _transformer()
     try:
-        return transform_report(data, id_dok_aplikasi, nama_file)
-    except TransformError as exc:
+        return st.transform_report(data, id_dok_aplikasi, nama_file)
+    except st.TransformError as exc:
         raise MasukanError(str(exc)) from exc

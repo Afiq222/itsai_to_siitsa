@@ -42,14 +42,29 @@ Kalau gagal (file tidak ada, bukan JSON, atau bukan format ITS AI), CLI mencetak
 
 Folder `output/` tidak ikut ke git karena berisi data hasil pentest.
 
+## Masking
+
+Alur: file ITS AI → `transform_report()` (format SIITSA) → `mask_report()` (masking). Tanpa AI, hanya regex.
+Data sensitif diganti label: `https://[DOMAIN]/api` (path tetap), `[IP]`, `[NIK]`, `[NIP]`, `[TELEPON]`,
+`[EMAIL]`, `[NAMA]`, `[PASSWORD]`, `[USERNAME]`, `[TOKEN]`, `[COOKIE]`, `[JWT]`. Payload serangan dan
+placeholder ITS AI (`<JWT>`) tidak disentuh. Aturan ada di `MASK_RULES` (`masking.py`); kasus baru
+ditambahkan sebagai satu `assert` di `tests/test_masking.py`.
+
+```powershell
+.venv\Scripts\python.exe -m pip install pytest
+.venv\Scripts\python.exe -m pytest tests
+```
+
 ## Struktur
 
 ```
 transformer/
   siitsa_transformer/
     normalize.py   baca & seragamkan 2 format ITS AI, hitung skor CVSS dari vektor, ambil screenshot
+    masking.py     regex masking kredensial & data pribadi (payload POC tidak disentuh)
     transform.py   label severity + rakit temuan_itsa, langkah_poc, peringatan, urutan, ringkasan
     __main__.py    CLI
+  tests/           tes masking (pytest)
   requirements.txt
 ```
 
